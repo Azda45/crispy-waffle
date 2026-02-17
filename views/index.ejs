@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-network-wired text-2xl"></i>
+                <h1 class="text-xl font-bold">WireGuard Manager</h1>
+            </div>
+            <div class="text-sm bg-indigo-700 px-3 py-1 rounded">
+                Server: <%= server.host %>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+
+        <% if (error) { %>
+            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow" role="alert">
+                <p class="font-bold">Error Connection</p>
+                <p>
+                    <%= error %>
+                </p>
+            </div>
+            <% } %>
+
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex space-x-4">
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <span class="text-gray-500 text-sm">Total Peers</span>
+                            <p class="counter-total text-2xl font-bold text-gray-800">
+                                <%= peers.length %>
+                            </p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <span class="text-gray-500 text-sm">Active</span>
+                            <p class="counter-active text-2xl font-bold text-green-600">
+                                <%= peers.filter(p=> p.disabled === 'false').length %>
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="openModal()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow transition flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Add Peer
+                    </button>
+                </div>
+
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Name</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    IPv4</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    IPv6</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Traffic (Tx/Rx)</th>
+                                <th
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <% peers.forEach(peer=> {
+                                const isActive = peer.disabled === 'false';
+                                const txMB = (parseInt(peer['tx-byte'] || 0) / 1024 / 1024).toFixed(2);
+                                const rxMB = (parseInt(peer['rx-byte'] || 0) / 1024 / 1024).toFixed(2);
+                                %>
+                                <tr id="row-<%= peer['.id'] %>" data-active="<%= isActive %>"
+                                    class="hover:bg-gray-50 transition">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <button onclick="togglePeer(this, '<%= peer['.id'] %>')"
+                                            id="toggle-<%= peer['.id'] %>"
+                                            class="relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none <%= isActive ? 'bg-green-500' : 'bg-gray-200' %>">
+                                            <span
+                                                class="pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200 <%= isActive ? 'translate-x-5' : 'translate-x-0' %>"></span>
+                                        </button>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            <%= peer.name || '(no name)' %>
+                                        </div>
+                                        <div class="text-xs text-gray-400">PK: <%= peer['public-key'].substring(0, 8) %>
+                                                ...</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-700">
+                                        <%= peer.ipv4 %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                                        <%= peer.ipv6 %>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <div><i class="fas fa-arrow-up text-green-500 mr-1"></i>
+                                            <%= txMB %> MB
+                                        </div>
+                                        <div><i class="fas fa-arrow-down text-blue-500 mr-1"></i>
+                                            <%= rxMB %> MB
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                        <button
+                                            onclick="showQR('<%= peer.privkey %>', '<%= peer.ipv4 %>', '<%= peer.ipv6 %>')"
+                                            class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-full w-8 h-8">
+                                            <i class="fas fa-qrcode"></i>
+                                        </button>
+                                        <button id="del-<%= peer['.id'] %>" onclick="deletePeer('<%= peer['.id'] %>')"
+                                            class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-full w-8 h-8">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
+                    <% if (peers.length===0 && !error) { %>
+                        <div class="p-8 text-center text-gray-500">No peers found.</div>
+                        <% } %>
+                </div>
+    </div>
+
+    <!-- Add Peer Modal -->
+    <div id="addModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-40">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Add New Peer</h3>
+                    <!-- Tombol generate ulang semua field -->
+                    <button type="button" onclick="fetchSuggest()"
+                        class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-50 transition">
+                        <i class="fas fa-sync-alt" id="suggestSpinner"></i> Regenerate
+                    </button>
+                </div>
+                <form id="addForm">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-1">
+                            Name <span class="text-red-500">*</span>
+                            <span class="font-normal text-gray-400 ml-1">(auto-generated, bisa diubah)</span>
+                        </label>
+                        <input type="text" id="fieldName" name="name" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-1">
+                            IPv4 <span class="text-red-500">*</span>
+                            <span class="font-normal text-gray-400 ml-1">(auto, bisa diubah)</span>
+                        </label>
+                        <input type="text" id="fieldIPv4" name="ipv4" required placeholder="10.10.10.2"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-1">
+                            IPv6 <span class="text-red-500">*</span>
+                            <span class="font-normal text-gray-400 ml-1">(auto, bisa diubah)</span>
+                        </label>
+                        <input type="text" id="fieldIPv6" name="ipv6" required placeholder="fd00:10:10::2"
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    </div>
+                    <div id="modalError" class="hidden bg-red-50 text-red-700 text-sm p-2 rounded mb-3"></div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeModal()"
+                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Cancel</button>
+                        <button type="submit" id="submitBtn"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Create
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 " onclick="closeQrModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 text-center">
+                    <h3 class="text-lg font-medium text-gray-900">Scan WireGuard Config</h3>
+                    <div class="mt-4 flex justify-center">
+                        <img id="qrImage" src="" alt="QR Code" class="border p-2 rounded max-w-xs">
+                    </div>
+                    <div class="mt-4">
+                        <textarea id="configText" rows="10" readonly
+                            class="w-full text-xs font-mono bg-gray-100 p-2 rounded border resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 flex justify-end gap-2">
+                    <button onclick="copyConfig()"
+                        class="inline-flex items-center gap-1 rounded-md border border-indigo-300 px-4 py-2 bg-indigo-50 text-sm font-medium text-indigo-700 hover:bg-indigo-100">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button onclick="closeQrModal()"
+                        class="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Modal helpers ────────────────────────────────────────────────
+        function closeModal() { document.getElementById('addModal').classList.add('hidden'); }
+        function closeQrModal() { 
+            document.getElementById('qrModal').classList.add('hidden'); 
+            // Clear content to prevent flash of old data
+            document.getElementById('qrImage').src = '';
+            document.getElementById('configText').value = '';
+        }
+        function copyConfig() {
+            navigator.clipboard.writeText(document.getElementById('configText').value);
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Copied!', showConfirmButton: false, timer: 1500 });
+        }
+
+        // ─── Fetch autosuggest dari server ────────────────────────────────
+        async function fetchSuggest() {
+            const spinner = document.getElementById('suggestSpinner');
+            spinner.classList.add('fa-spin');
+
+            try {
+                const res = await fetch('/suggest');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('fieldName').value = data.name;
+                    document.getElementById('fieldIPv4').value = data.ipv4;
+                    document.getElementById('fieldIPv6').value = data.ipv6;
+                }
+            } catch (e) {
+                // Kalau gagal, biarkan field kosong — user isi manual
+                console.warn('Suggest failed:', e);
+            } finally {
+                spinner.classList.remove('fa-spin');
+            }
+        }
+
+        // ─── Buka modal + langsung fetch suggest ─────────────────────────
+        async function openModal() {
+            // Reset form & error
+            document.getElementById('addForm').reset();
+            document.getElementById('modalError').classList.add('hidden');
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-plus"></i> Create';
+
+            // Tampilkan modal dulu (feels responsive)
+            document.getElementById('addModal').classList.remove('hidden');
+
+            // Isi field otomatis dari server
+            await fetchSuggest();
+        }
+
+        // ─── Submit Add Peer ──────────────────────────────────────────────
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target).entries());
+
+            // Validasi client-side
+            if (!data.ipv6?.includes(':')) {
+                showModalError('IPv6 tidak valid — harus mengandung ":"');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+            try {
+                const res = await fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    closeModal();
+                    window.location.reload();
+                } else {
+                    showModalError(json.error || 'Gagal menambah peer');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Create';
+                }
+            } catch (err) {
+                showModalError('Request gagal, cek koneksi');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i> Create';
+            }
+        });
+
+        function showModalError(msg) {
+            const el = document.getElementById('modalError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        // ─── Toggle Peer — update DOM langsung, tidak reload ─────────────
+        async function togglePeer(btn, id) {
+            const row = document.getElementById('row-' + id);
+            if (!btn || !row) return;
+
+            const isActive = row.dataset.active === 'true';
+
+            // Disable tombol sementara saat request berlangsung
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            try {
+                const res = await fetch('/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, enabled: isActive })
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    const nowActive = !isActive;
+                    // Update data-active di row
+                    row.dataset.active = nowActive;
+
+                    // Update warna dan posisi knob toggle
+                    if (nowActive) {
+                        btn.classList.remove('bg-gray-200');
+                        btn.classList.add('bg-green-500');
+                        btn.querySelector('span').classList.remove('translate-x-0');
+                        btn.querySelector('span').classList.add('translate-x-5');
+                    } else {
+                        btn.classList.remove('bg-green-500');
+                        btn.classList.add('bg-gray-200');
+                        btn.querySelector('span').classList.remove('translate-x-5');
+                        btn.querySelector('span').classList.add('translate-x-0');
+                    }
+
+                    // Update counter Active di header
+                    updateCounters();
+                } else {
+                    Swal.fire('Error', json.error || 'Gagal toggle', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal toggle peer', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        // ─── Delete Peer — hapus row dari DOM langsung ────────────────────
+        async function deletePeer(id) {
+            const result = await Swal.fire({
+                title: 'Hapus peer ini?',
+                text: 'Tidak bisa di-undo!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, hapus!'
+            });
+            if (!result.isConfirmed) return;
+
+            const row = document.getElementById('row-' + id);
+            const btn = document.getElementById('del-' + id);
+
+            // Animasi loading pada tombol delete
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+
+            try {
+                const res = await fetch('/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    // Animasi fade out lalu hapus row
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s';
+                        row.style.opacity = '0';
+                        setTimeout(() => {
+                            row.remove();
+                            updateCounters();
+                            // Tampilkan "No peers" kalau tabel kosong
+                            const tbody = document.querySelector('tbody');
+                            if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                const table = document.querySelector('.bg-white.shadow-md');
+                                if (table && !table.querySelector('.empty-msg')) {
+                                    const msg = document.createElement('div');
+                                    msg.className = 'empty-msg p-8 text-center text-gray-500';
+                                    msg.textContent = 'No peers found.';
+                                    table.appendChild(msg);
+                                }
+                            }
+                        }, 300);
+                    }
+                } else {
+                    Swal.fire('Error', json.error || 'Gagal hapus', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-trash"></i>';
+                    }
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Gagal hapus peer', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash"></i>';
+                }
+            }
+        }
+
+        // ─── Update counter Total & Active di header ──────────────────────
+        function updateCounters() {
+            const rows = document.querySelectorAll('tbody tr[data-active]');
+            const total = rows.length;
+            const active = [...rows].filter(r => r.dataset.active === 'true').length;
+
+            const counters = document.querySelectorAll('.counter-total');
+            counters.forEach(el => el.textContent = total);
+            const activeCounters = document.querySelectorAll('.counter-active');
+            activeCounters.forEach(el => el.textContent = active);
+        }
+
+        // ─── Show QR Code ─────────────────────────────────────────────────
+        async function showQR(privkey, ipv4, ipv6) {
+            if (!privkey || privkey === 'null' || privkey === 'undefined') {
+                Swal.fire('Error', 'Private key tidak ditemukan. Peer ini dibuat manual via Winbox.', 'error');
+                return;
+            }
+            if (!ipv6 || ipv6 === '-') {
+                Swal.fire('Error', 'IPv6 tidak tersedia pada peer ini.', 'error');
+                return;
+            }
+
+            const minLoadingTime = 400; // ms
+            const startTime = Date.now();
+            Swal.fire({ title: 'Generating QR...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+            const showModal = () => {
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+                setTimeout(() => {
+                    Swal.close();
+                    document.getElementById('qrModal').classList.remove('hidden');
+                }, remainingTime);
+            };
+
+            const showError = (errorMsg) => {
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+                setTimeout(() => {
+                    Swal.close();
+                    Swal.fire('Error', errorMsg, 'error');
+                }, remainingTime);
+            };
+
+            try {
+                const res = await fetch('/qrcode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ privkey, ipv4, ipv6 })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const img = new Image();
+                    img.onload = function () {
+                        document.getElementById('qrImage').src = img.src;
+                        document.getElementById('configText').value = data.configText;
+                        showModal();
+                    };
+                    img.onerror = function () {
+                        showError('Gagal memuat gambar QR code.');
+                    };
+                    img.src = data.qrcode;
+                } else {
+                    showError(data.error || 'Terjadi kesalahan');
+                }
+            } catch (err) {
+                showError('Gagal menghubungi server');
+            }
+        }
+    </script>
+</body>
+
+</html>

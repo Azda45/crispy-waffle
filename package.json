@@ -1,0 +1,19 @@
+{
+  "name": "wg-manager",
+  "version": "1.0.0",
+  "description": "WireGuard peer manager via Mikrotik RouterOS",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "dotenv": "^17.3.1",
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
+  }
+}
