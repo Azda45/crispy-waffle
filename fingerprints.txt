@@ -1,0 +1,27 @@
+# ════════════════════════════════════════════════════════════
+# WireGuard Manager — TLS Fingerprints
+# Generated : 2026-02-19T18:44:32.934Z
+# Servers   : 2
+# ════════════════════════════════════════════════════════════
+
+# ── S0 — sv.0.matyr.my.id
+# Host      : sv.0.matyr.my.id:8729
+# Subject   : sv.0.matyr.my.id
+# Issuer    : R13
+# Valid     : Feb  9 06:25:12 2026 GMT  →  May 10 06:25:11 2026 GMT
+# SHA-256   : 64:BC:EA:62:25:BD:A6:8B:6B:15:B8:55:55:E9:E8:74:6A:38:DE:C8:ED:E2:7E:E6:08:AB:A0:CA:85:DD:09:93
+#
+S0_TLS_FINGERPRINT=64:BC:EA:62:25:BD:A6:8B:6B:15:B8:55:55:E9:E8:74:6A:38:DE:C8:ED:E2:7E:E6:08:AB:A0:CA:85:DD:09:93
+
+# ── S1 — sv.1.matyr.my.id
+# Host      : sv.1.matyr.my.id:8729
+# Subject   : sv.1.matyr.my.id
+# Issuer    : R12
+# Valid     : Feb  9 06:22:16 2026 GMT  →  May 10 06:22:15 2026 GMT
+# SHA-256   : 9D:39:7A:44:57:E8:91:05:88:EB:B7:A5:C6:5C:25:00:41:53:F2:F9:A4:28:0A:6F:67:9A:AB:80:9F:3F:7D:B8
+#
+S1_TLS_FINGERPRINT=9D:39:7A:44:57:E8:91:05:88:EB:B7:A5:C6:5C:25:00:41:53:F2:F9:A4:28:0A:6F:67:9A:AB:80:9F:3F:7D:B8
+
+# ════════════════════════════════════════════════════════════
+# Total: 2 berhasil, 0 gagal
+# ════════════════════════════════════════════════════════════
